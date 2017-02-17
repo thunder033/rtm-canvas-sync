@@ -12,15 +12,20 @@ import * as fs from 'fs';
 
 class HttpServer {
 
+    private static readonly MIME_TYPES: {
+        'html': 'text/html',
+    };
+
     private server: http.Server;
     private app: express.Application;
     private readonly port: number = process.env.PORT || process.env.NODE_PORT || 3000;
 
-    readFileAsync: Function;
+    private readFileAsync: Function;
 
-    private static readonly MIME_TYPES: {
-        'html': 'text/html'
-    };
+    private static getMimeType(fileName: string): string {
+        const extension: string = fileName.split('.').pop();
+        return HttpServer.MIME_TYPES[extension];
+    }
 
     constructor(routes: Object) {
         this.app = express();
@@ -31,13 +36,12 @@ class HttpServer {
         this.routes(routes);
     }
 
-    config() {
-        this.readFileAsync = Q.denodeify(fs.readFile);
+    public getServer(): http.Server {
+        return this.server;
     }
 
-    private static getMimeType(fileName: string):string {
-        const extension: string = fileName.split('.').pop();
-        return HttpServer.MIME_TYPES[extension];
+    private config() {
+        this.readFileAsync = Q.denodeify(fs.readFile);
     }
 
     private routes(routes: Object): void {
@@ -46,10 +50,6 @@ class HttpServer {
                 res.sendFile(routes[route], {root: `${__dirname}/../`});
             });
         });
-    }
-
-    public getServer(): http.Server {
-        return this.server;
     }
 }
 
@@ -71,6 +71,6 @@ const HTTP_ROUTES = {
     '/part4': 'client/part4.html',
 };
 
-//init the application
+// init the application
 const httpServer = new HttpServer(HTTP_ROUTES);
 const syncServer = new SyncServer(httpServer.getServer());
