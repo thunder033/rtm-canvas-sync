@@ -4,54 +4,9 @@
  * Created by gjrwcs on 2/16/2017.
  */
 
-import * as express from 'express';
+import {ExpressServer} from './express-server';
 import * as http from 'http';
 import * as socketio from 'socket.io';
-import * as Q from 'q';
-import * as fs from 'fs';
-
-class HttpServer {
-
-    private static readonly MIME_TYPES: {
-        'html': 'text/html',
-    };
-
-    private server: http.Server;
-    private app: express.Application;
-    private readonly port: number = process.env.PORT || process.env.NODE_PORT || 3000;
-
-    private readFileAsync: Function;
-
-    private static getMimeType(fileName: string): string {
-        const extension: string = fileName.split('.').pop();
-        return HttpServer.MIME_TYPES[extension];
-    }
-
-    constructor(routes: Object) {
-        this.app = express();
-        this.server = http.createServer(this.app);
-        this.server.listen(this.port);
-
-        this.config();
-        this.routes(routes);
-    }
-
-    public getServer(): http.Server {
-        return this.server;
-    }
-
-    private config() {
-        this.readFileAsync = Q.denodeify(fs.readFile);
-    }
-
-    private routes(routes: Object): void {
-        Object.keys(routes).forEach((route: string) => {
-            this.app.use(route, (req: express.Request, res: express.Response, next: express.NextFunction) => {
-                res.sendFile(routes[route], {root: `${__dirname}/../`});
-            });
-        });
-    }
-}
 
 class SyncServer {
 
@@ -72,5 +27,5 @@ const HTTP_ROUTES = {
 };
 
 // init the application
-const httpServer = new HttpServer(HTTP_ROUTES);
+const httpServer = new ExpressServer(HTTP_ROUTES);
 const syncServer = new SyncServer(httpServer.getServer());
