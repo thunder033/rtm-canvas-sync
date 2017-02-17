@@ -8,7 +8,8 @@
     "build": "tsc -p ./",
     "pretest": "tslint \"src/**/*.ts\"",
     "test": "echo \"Tests complete\"",
-    "postinstall": "npm run build"
+    "postinstall": "npm run build",
+    "buildRun": "tsc -p ./ && node ./src/server.js"
   },
   "repository": {
     "type": "git",
