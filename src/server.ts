@@ -5,18 +5,7 @@
  */
 
 import {ExpressServer} from './express-server';
-import * as http from 'http';
-import * as socketio from 'socket.io';
-
-class SyncServer {
-
-    private io;
-
-    constructor(httpServer: http.Server) {
-        this.io = socketio(httpServer);
-    }
-
-}
+import {SyncServer} from './sync-server';
 
 const HTTP_ROUTES = {
     '/': 'client/index.html',
@@ -28,4 +17,5 @@ const HTTP_ROUTES = {
 
 // init the application
 const httpServer = new ExpressServer(HTTP_ROUTES);
+// Create a new sync server
 const syncServer = new SyncServer(httpServer.getServer());
