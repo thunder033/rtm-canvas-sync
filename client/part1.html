@@ -10,27 +10,36 @@
         // hack in exports so things don't break
         window.exports = window.exports || {};
     </script>
-    <script src="/messages.js"></script>
+
     <script type="text/babel">
         let counter = 0;
 
         function connect() {
             const socket = io.connect();
+            const counterDisplay = document.querySelector('#counter-display');
 
             socket.on('connect', () => {
                 console.log('connecting');
-                socket.emit('join', {});
+                socket.emit('join', {name: Math.random().toString()});
             });
 
             socket.on('update', (data) => {
                 counter = data;
+                counterDisplay.innerHTML = counter.toString();
             });
+
+            const interval = setInterval(function () {
+                console.log('increment');
+                socket.emit('increment');
+            }, 1000);
         }
 
         window.addEventListener('load', connect);
     </script>
 </head>
 <body>
-Hello World
+<h1>Hello World</h1>
+
+<span>The counter is at: <span id="counter-display"></span></span>
 </body>
 </html>

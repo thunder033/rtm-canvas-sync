@@ -19,3 +19,21 @@ const HTTP_ROUTES = {
 const httpServer = new ExpressServer(HTTP_ROUTES);
 // Create a new sync server
 const syncServer = new SyncServer(httpServer.getServer());
+
+class CounterServer {
+    private syncServer: SyncServer;
+    private counter: number = 0;
+    private readonly increment: number = 1;
+
+    constructor(server: SyncServer) {
+        this.syncServer = server;
+
+        server.addEventListener('increment', (io) => {
+            console.log('increment');
+            this.counter += this.increment;
+            io.sockets.in(syncServer.getRoom()).emit('update', this.counter);
+        });
+    }
+}
+
+const counterServer = new CounterServer(syncServer);

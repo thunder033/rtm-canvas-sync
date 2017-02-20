@@ -10,7 +10,6 @@ export class User {
 
     private socket: Socket;
     private name: string;
-    private room: string;
     private server: SyncServer;
 
     constructor(socket: Socket, server: SyncServer) {
@@ -18,27 +17,26 @@ export class User {
         this.socket = socket;
 
         socket.on(IOEvent.join, this.onJoin.bind(this));
-        socket.on('msg', this.onMsg.bind(this));
         socket.on(IOEvent.disconnect, this.onDisconnect.bind(this));
-        socket.on('delivered', this.onDelivered.bind(this));
+    }
+
+    public addEventListener(evt: string, handler: Function): void {
+        this.socket.on(evt, (data) => {
+            handler(data, this, this.socket, this.server);
+        });
     }
 
     private onJoin(data) {
+        console.log(`${data.name} joined`);
         const room = this.server.getRoom();
 
         this.name = data.name;
         this.socket.join(room);
     }
 
-    private onDelivered(data): void {
-
-    }
-
-    private onMsg(data) {
-
-    }
-
     private onDisconnect(data) {
-
+        if (!this.server.removeUser(this)) {
+            console.warn(`Failed to remove user [${this.name}] from the server`);
+        }
     }
 }
