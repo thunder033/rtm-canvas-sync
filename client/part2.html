@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Canvas Syncing :: Pt 2</title>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-core/5.8.34/browser.min.js"></script>
+
+    <script>
+        // hack in exports so things don't break
+        window.exports = window.exports || {};
+    </script>
+    <script src="priority-queue.js"></script>
+
+    <script type="text/babel">
+        function connect() {
+            const socket = io.connect(`http://${window.location.host}`, {query: "room=boxes"});
+
+            const BOX_SIZE = 30;
+            const CANVAS_SIZE = 500;
+            let color = 0;
+
+            const canvas = document.querySelector('#canvas');
+            canvas.width = canvas.height = CANVAS_SIZE;
+            const ctx = canvas.getContext('2d');
+
+            const drawQueue = new PriorityQueue();
+
+            const pageLoadTime = (new Date()).getTime();
+
+            socket.on('connect', () => {
+                socket.emit('join', {name: Math.random().toString()});
+            });
+
+            // Save the hue generated for this client
+            socket.on('generatedHue', (hue) => {color = hue});
+
+            socket.on('update', (data) => {
+
+            });
+
+            function getTargetPosition(e){
+                const box = e.target;
+                return {x: e.clientX - box.offsetLeft, y: e.clientY - box.offsetTop};
+            }
+
+            function createBox(e) {
+                const pos = getTargetPosition(e);
+                const time = pageLoadTime + ~~performance.now();
+                drawQueue.enqueue(time, pos);
+            }
+
+            canvas.addEventListener('click', createBox);
+
+            function draw() {
+                ctx.clearRect(0, 0, 500, 500);
+                ctx.fillStyle = `hsla(${color},80%,45%,1)`;
+
+                const it = drawQueue.getIterator();
+                let box = null;
+
+                while (!it.isEnd()) {
+                    box = it.next();
+                    ctx.fillRect(box.x, box.y, BOX_SIZE, BOX_SIZE);
+                }
+
+                requestAnimationFrame(draw);
+            }
+
+            requestAnimationFrame(draw);
+        }
+
+        window.addEventListener('load', connect);
+    </script>
+
+    <style>
+        #canvas {
+            width: 500px;
+            height: 500px;
+            border: 1px #bbb solid;
+            box-shadow: 2px 2px 2px rgba(0,0,0,.4);
+        }
+    </style>
+</head>
+<body>
+<canvas id="canvas"></canvas>
+</body>
+</html>
