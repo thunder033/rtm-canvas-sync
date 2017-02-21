@@ -46,5 +46,9 @@ class BoxesUser extends User {
         this.hue = BoxesUser.getNewHue();
         BoxesUser.usedHues.push(this.hue);
         socket.emit('generatedHue', this.hue);
+
+        socket.on('boxCreated', (data) => {
+            this.server.broadcast('boxCreated', data);
+        });
     }
 }

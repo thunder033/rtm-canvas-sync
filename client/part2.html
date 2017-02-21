@@ -36,8 +36,8 @@
             // Save the hue generated for this client
             socket.on('generatedHue', (hue) => {color = hue});
 
-            socket.on('update', (data) => {
-
+            socket.on('boxCreated', (data) => {
+                drawQueue.enqueue(data.time, data);
             });
 
             function getTargetPosition(e){
@@ -48,20 +48,29 @@
             function createBox(e) {
                 const pos = getTargetPosition(e);
                 const time = pageLoadTime + ~~performance.now();
-                drawQueue.enqueue(time, pos);
+
+                const box = {
+                    x: pos.x,
+                    y: pos.y,
+                    hue: color,
+                    time: time
+                };
+
+                //drawQueue.enqueue(time, box);
+                socket.emit('boxCreated', box);
             }
 
             canvas.addEventListener('click', createBox);
 
             function draw() {
                 ctx.clearRect(0, 0, 500, 500);
-                ctx.fillStyle = `hsla(${color},80%,45%,1)`;
 
                 const it = drawQueue.getIterator();
                 let box = null;
 
                 while (!it.isEnd()) {
                     box = it.next();
+                    ctx.fillStyle = `hsla(${box.hue},80%,45%,1)`;
                     ctx.fillRect(box.x, box.y, BOX_SIZE, BOX_SIZE);
                 }
 
