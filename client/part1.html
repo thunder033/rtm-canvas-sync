@@ -15,7 +15,7 @@
         let counter = 0;
 
         function connect() {
-            const socket = io.connect();
+            const socket = io.connect(`http://${window.location.host}`, {query: "room=counter"});
             const counterDisplay = document.querySelector('#counter-display');
 
             socket.on('connect', () => {
@@ -29,7 +29,6 @@
             });
 
             const interval = setInterval(function () {
-                console.log('increment');
                 socket.emit('increment');
             }, 1000);
         }

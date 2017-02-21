@@ -4,7 +4,9 @@
  */
 import * as http from 'http';
 import * as socketio from 'socket.io';
-import {User} from './user';
+import Socket = SocketIO.Socket;
+import {IUser, User} from './user';
+import {isNullOrUndefined} from "util";
 
 function strEnum<T extends string>(o: T[]): {[K in T]: K} {
     return o.reduce((res, key) => {
@@ -19,33 +21,70 @@ export const IOEvent = strEnum([
     'disconnect',
 ]);
 
+class Room {
+    public name: string;
+    public userType: IUser;
+    public decorator: ServerDecorator;
+
+    constructor(name: string, userType: IUser, decorator) {
+        this.name = name;
+        this.userType = userType;
+        this.decorator = decorator;
+    }
+}
+
+export abstract class ServerDecorator {
+
+    protected syncServer: SyncServer;
+
+    constructor(server: SyncServer) {
+        this.syncServer = server;
+    }
+
+    public getServer(): SyncServer {
+        return this.syncServer;
+    }
+}
+
 export class SyncServer {
 
+    private rooms = {};
     private io;
     private connections: User[];
-    private roomName: string = 'room1';
+    private defaultRoom: string = 'room1';
 
     constructor(httpServer: http.Server) {
         this.connections = [];
 
         this.io = socketio(httpServer);
-        this.io.sockets.on(IOEvent.connection, (e) => this.registerConnection(e));
+        this.io.use((socket: Socket, next) => {
+            this.registerConnection(socket);
+            next();
+        });
     }
 
-    public registerConnection(socket) {
-        this.connections.push(new User(socket, this));
+    public addRoom(name: string, userType: IUser, apiDecorator: any) {
+        this.rooms[name] = new Room(name, userType, new apiDecorator(this));
+    }
+
+    public registerConnection(socket: Socket) {
+        let user: User = null;
+        const room: Room = this.rooms[socket.handshake.query.room];
+        if (!isNullOrUndefined(room)) {
+            console.log(`connect to ${room.name}`);
+            user = new room.userType(socket, room.decorator);
+        } else {
+            user = new User(socket, this);
+        }
+        this.connections.push(user);
     };
 
     public getRoom(): string {
-        return this.roomName;
+        return this.defaultRoom;
     }
 
-    public addEventListener(evt: string, handler: Function): void {
-        console.log('register evt ' + evt);
-        this.io.sockets.on(evt, (data) => {
-            console.log(evt);
-            handler(this.io, data);
-        });
+    public broadcast(evt, data) {
+        this.io.sockets.in(this.defaultRoom).emit(evt, data);
     }
 
     /**

@@ -6,11 +6,17 @@ import {IOEvent, SyncServer} from './sync-server';
 import Socket = SocketIO.Socket;
 import Timer = NodeJS.Timer;
 
+export interface IUser {
+    new (socket: Socket, decorator: any): User;
+}
+
 export class User {
 
-    private socket: Socket;
+    private static eventHandlers = {};
+
+    protected server: SyncServer;
+    protected socket: Socket;
     private name: string;
-    private server: SyncServer;
 
     constructor(socket: Socket, server: SyncServer) {
         this.server = server;
@@ -18,11 +24,11 @@ export class User {
 
         socket.on(IOEvent.join, this.onJoin.bind(this));
         socket.on(IOEvent.disconnect, this.onDisconnect.bind(this));
-    }
 
-    public addEventListener(evt: string, handler: Function): void {
-        this.socket.on(evt, (data) => {
-            handler(data, this, this.socket, this.server);
+        Object.keys(User.eventHandlers).forEach((evt) => {
+            this.socket.on(evt, (data) => {
+                User.eventHandlers[evt](data, this, this.socket, this.server);
+            });
         });
     }
 
