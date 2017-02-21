@@ -16,6 +16,7 @@ const HTTP_ROUTES = {
     '/part3': 'client/part3.html',
     '/part4': 'client/part4.html',
     '/priority-queue.js': 'src/priority-queue.js',
+    '/utility.js': 'client/utility.js'
 };
 
 // init the application
