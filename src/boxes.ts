@@ -13,12 +13,12 @@ export class BoxesDecorator extends ServerDecorator {
         server.addRoom('boxes', BoxesUser, BoxesDecorator);
     }
 
-    constructor(server: SyncServer) {
-        super(server, 'boxes');
+    constructor(server: SyncServer, roomName: string = 'boxes') {
+        super(server, roomName);
     }
 }
 
-class BoxesUser extends User {
+export class BoxesUser extends User {
 
     private static usedHues: number[] = [];
 

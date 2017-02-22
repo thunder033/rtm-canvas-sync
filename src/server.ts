@@ -8,6 +8,7 @@ import {BoxesDecorator} from "./boxes";
 import {CounterDecorator} from './counter';
 import {ExpressServer} from './express-server';
 import {MovingDecorator} from "./moving";
+import {StreamingDecorator} from "./streaming";
 import {SyncServer} from './sync-server';
 
 const HTTP_ROUTES = {
@@ -29,3 +30,4 @@ const syncServer = new SyncServer(httpServer.getServer());
 CounterDecorator.apply(syncServer); // Part 1
 BoxesDecorator.apply(syncServer); // Part 2
 MovingDecorator.apply(syncServer); // Part 3
+StreamingDecorator.apply(syncServer); // Part 4

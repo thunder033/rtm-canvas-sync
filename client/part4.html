@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Canvas Syncing :: Pt 2</title>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-core/5.8.34/browser.min.js"></script>
+
+    <script>
+        // hack in exports so things don't break
+        window.exports = window.exports || {};
+    </script>
+    <script src="priority-queue.js"></script>
+
+    <script src="utility.js"></script>
+    <script type="text/babel">
+        function connect() {
+            const socket = io.connect(`http://${window.location.host}`, {query: "room=streaming"});
+            const imgInput = document.querySelector('#image');
+            const preview = document.querySelector('#preview');
+
+            const BOX_SIZE = 30;
+            const CANVAS_SIZE = 500;
+            let color = 0;
+            let brushImage = null;
+            let loading = true;
+
+            const canvas = document.querySelector('#canvas');
+            canvas.width = canvas.height = CANVAS_SIZE;
+            const ctx = canvas.getContext('2d');
+
+            const buffer = document.createElement('canvas');
+            buffer.width = buffer.height = BOX_SIZE;
+            const bufferCtx = buffer.getContext('2d');
+
+            socket.on('connect', () => {
+                socket.emit('join', {name: Math.random().toString()});
+            });
+
+            // Save the hue generated for this client and update preview
+            socket.on('generatedHue', (hue) => {
+                color = hue;
+                preview.style.backgroundColor = `hsla(${color},80%,45%,1)`;
+            });
+
+            socket.on('imageDrawn', (data) => {
+                const img = new Image();
+                img.onload = () => {
+                    ctx.drawImage(img, data.x, data.y, BOX_SIZE, BOX_SIZE);
+                };
+                img.src = data.imgData;
+            });
+
+            function drawBox(e) {
+                const pos = getTargetPosition(e);
+
+                bufferCtx.fillStyle = `hsla(${color},80%,45%,1)`;
+                const offset = BOX_SIZE * .1;
+                bufferCtx.fillRect(0, 0, BOX_SIZE, BOX_SIZE);
+                if(brushImage && !loading) {
+                    bufferCtx.drawImage(brushImage, offset, offset, BOX_SIZE - offset * 2, BOX_SIZE - offset * 2);
+                }
+
+                const box = {
+                    x: pos.x,
+                    y: pos.y,
+                    hue: color,
+                    imgData: buffer.toDataURL()
+                };
+
+                socket.emit('imageDrawn', box);
+            }
+
+            canvas.addEventListener('click', drawBox);
+
+            function isImage(file) {
+                const IMAGE_EXTENSIONS = ['png','jpg','jpeg','gif','bmp'];
+                const ext = file.name.split('.').pop().toLowerCase();
+
+                return IMAGE_EXTENSIONS.indexOf(ext) > -1;
+            }
+
+            function setBrushImage(e) {
+                console.log('got image');
+                const file = e.target.files[0];
+
+                if(file && isImage(file)){
+                    loading = true;
+
+                    brushImage = new Image();
+                    brushImage.onload = function(){
+                        loading = false;
+                        preview.innerHTML = '';
+                        preview.appendChild(brushImage);
+                    };
+                    brushImage.src = URL.createObjectURL(file);
+                }
+            }
+
+            imgInput.addEventListener('change', setBrushImage);
+        }
+
+        window.addEventListener('load', connect);
+    </script>
+
+    <style>
+        #canvas {
+            width: 500px;
+            height: 500px;
+            border: 1px #bbb solid;
+            box-shadow: 2px 2px 2px rgba(0,0,0,.4);
+        }
+
+        #brush-selector {
+            border: 1px #bbb solid;
+            height: 4em;
+            margin-bottom: .5em;
+        }
+
+        #preview {
+            width: 4em;
+            height: 4em;
+            float: left;
+            margin-right: .5em;
+            box-sizing: border-box;
+            padding: .5em;
+        }
+
+        #preview img {
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+<body>
+<div id="brush-selector">
+    <div id="preview"></div>
+    <label>Brush Image:</label>
+    <input type="file" id="image">
+</div>
+<canvas id="canvas"></canvas>
+
+</body>
+</html>
