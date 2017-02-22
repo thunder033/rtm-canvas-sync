@@ -36,13 +36,19 @@ class Room {
 export abstract class ServerDecorator {
 
     protected syncServer: SyncServer;
+    private roomName: string;
 
-    constructor(server: SyncServer) {
+    constructor(server: SyncServer, roomName: string) {
         this.syncServer = server;
+        this.roomName = roomName;
     }
 
     public getServer(): SyncServer {
         return this.syncServer;
+    }
+
+    public getRoomName(): string {
+        return this.roomName;
     }
 }
 
@@ -61,6 +67,10 @@ export class SyncServer {
             this.registerConnection(socket);
             next();
         });
+    }
+
+    public getUsers(): User[] {
+        return this.connections;
     }
 
     public addRoom(name: string, userType: IUser, apiDecorator: any) {
@@ -83,8 +93,8 @@ export class SyncServer {
         return this.defaultRoom;
     }
 
-    public broadcast(evt, data) {
-        this.io.sockets.in(this.defaultRoom).emit(evt, data);
+    public broadcast(evt: string, data: any, room: string = this.defaultRoom) {
+        this.io.sockets.in(room).emit(evt, data);
     }
 
     /**

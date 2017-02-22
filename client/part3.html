@@ -13,14 +13,16 @@
     </script>
     <script src="priority-queue.js"></script>
 
+    <script src="utility.js"></script>
     <script type="text/babel">
         function connect() {
-            const socket = io.connect(`http://${window.location.host}`, {query: "room=boxes"});
+            const socket = io.connect(`http://${window.location.host}`, {query: "room=moving"});
 
             const BOX_SIZE = 30;
             const CANVAS_SIZE = 500;
 
-            const users = [];
+            const users = {};
+            let hue = 0;
 
             const canvas = document.querySelector('#canvas');
             canvas.width = canvas.height = CANVAS_SIZE;
@@ -35,12 +37,41 @@
             });
 
             socket.on('sendRoomUsers', (data) => {
-                users.length = 0;
-                Array.push.apply(users, data);
+                data.forEach((user) => {
+                    if(!users[user.hue]){
+                        users[user.hue] = user;
+                        drawQueue.enqueue(1, user);
+                    }
+                });
+            });
+
+            socket.on('userJoined', (data) => {
+                if(!users[data.hue]){
+                    users[data.hue] = data;
+                    drawQueue.enqueue(1, data);
+                }
+            });
+
+            socket.on('userDisconnected', (data) => {
+                console.log('remove user', data);
+                delete users[data.hue];
+                drawQueue.clear();
+
+                Object.keys(users).forEach((id) => {
+                    const priority = id === hue ? 0 : 1;
+                    drawQueue.enqueue(priority, users[id]);
+                });
+            });
+
+            socket.on('generatedHue', (data) => {
+                users[data.hue] = data;
+                hue = data.hue;
+                drawQueue.enqueue(0, data);
             });
 
             socket.on('userMoved', (data) => {
-
+                Object.assign(users[data.hue], data);
+                draw(drawQueue);
             });
 
             function updatePosition(e) {
@@ -78,8 +109,16 @@
 
         window.addEventListener('load', connect);
     </script>
+    <style>
+        #canvas {
+            width: 500px;
+            height: 500px;
+            border: 1px #bbb solid;
+            box-shadow: 2px 2px 2px rgba(0,0,0,.4);
+        }
+    </style>
 </head>
 <body>
-
+<canvas id="canvas"></canvas>
 </body>
 </html>

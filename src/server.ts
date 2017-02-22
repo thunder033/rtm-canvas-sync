@@ -7,6 +7,7 @@
 import {BoxesDecorator} from "./boxes";
 import {CounterDecorator} from './counter';
 import {ExpressServer} from './express-server';
+import {MovingDecorator} from "./moving";
 import {SyncServer} from './sync-server';
 
 const HTTP_ROUTES = {
@@ -16,7 +17,7 @@ const HTTP_ROUTES = {
     '/part3': 'client/part3.html',
     '/part4': 'client/part4.html',
     '/priority-queue.js': 'src/priority-queue.js',
-    '/utility.js': 'client/utility.js'
+    '/utility.js': 'client/utility.js',
 };
 
 // init the application
@@ -27,3 +28,4 @@ const syncServer = new SyncServer(httpServer.getServer());
 // Each decorator defines the functionality for a room
 CounterDecorator.apply(syncServer); // Part 1
 BoxesDecorator.apply(syncServer); // Part 2
+MovingDecorator.apply(syncServer); // Part 3

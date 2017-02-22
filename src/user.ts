@@ -16,6 +16,7 @@ export class User {
 
     protected server: SyncServer;
     protected socket: Socket;
+    protected room: string;
     private name: string;
 
     constructor(socket: Socket, server: SyncServer) {
@@ -32,17 +33,17 @@ export class User {
         });
     }
 
-    private onJoin(data) {
-        console.log(`${data.name} joined`);
-        const room = this.server.getRoom();
-
-        this.name = data.name;
-        this.socket.join(room);
-    }
-
-    private onDisconnect(data) {
+    protected onDisconnect(data) {
         if (!this.server.removeUser(this)) {
             console.warn(`Failed to remove user [${this.name}] from the server`);
         }
+    }
+
+    private onJoin(data) {
+        console.log(`${data.name} joined`);
+        const room = this.room || this.server.getRoom();
+
+        this.name = data.name;
+        this.socket.join(room);
     }
 }

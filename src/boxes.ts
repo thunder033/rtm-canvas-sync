@@ -14,7 +14,7 @@ export class BoxesDecorator extends ServerDecorator {
     }
 
     constructor(server: SyncServer) {
-        super(server);
+        super(server, 'boxes');
     }
 }
 
@@ -43,12 +43,14 @@ class BoxesUser extends User {
     constructor(socket: Socket, counter: BoxesDecorator) {
         super(socket, counter.getServer());
 
+        this.room = counter.getRoomName();
         this.hue = BoxesUser.getNewHue();
+
         BoxesUser.usedHues.push(this.hue);
         socket.emit('generatedHue', this.hue);
 
         socket.on('boxCreated', (data) => {
-            this.server.broadcast('boxCreated', data);
+            this.server.broadcast('boxCreated', data, this.room);
         });
     }
 }

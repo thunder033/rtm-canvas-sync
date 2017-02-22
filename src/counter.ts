@@ -16,12 +16,12 @@ export class CounterDecorator extends ServerDecorator {
     }
 
     constructor(server: SyncServer) {
-        super(server);
+        super(server, 'counter');
     }
 
     public increment() {
         this.value += this.incrementAmt;
-        this.syncServer.broadcast('update', this.value);
+        this.syncServer.broadcast('update', this.value, this.getRoomName());
     }
 }
 
@@ -30,6 +30,7 @@ class CounterUser extends User {
     constructor(socket: Socket, counter: CounterDecorator) {
         super(socket, counter.getServer());
 
+        this.room = counter.getRoomName();
         socket.on('increment', () => {
             counter.increment();
         });
